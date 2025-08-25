@@ -57,3 +57,5 @@ npm run preview
 - Do not commit your real `.env`
 - Rate limits apply per provider
 - This is educational/demo code; harden for production use (timeouts, retries, logging, auth, error handling)
+
+  <img width="887" height="588" alt="image" src="https://github.com/user-attachments/assets/437003b8-74c2-4040-b6ed-f61532d796b1" />
