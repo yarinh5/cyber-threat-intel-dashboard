@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cyber Threat Intelligence Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="container glass">
+      <h1>Cyber Threat Intelligence</h1>
+      <p class="subtitle">Check IP or Domain reputation</p>
+
+      <form id="check-form">
+        <input id="query" type="text" placeholder="Enter IP or Domain" required />
+        <button type="submit">Check</button>
+      </form>
+
+      <div id="result" class="card hidden"></div>
+    </div>
+
+    <script>
+      const form = document.getElementById('check-form');
+      const input = document.getElementById('query');
+      const resultEl = document.getElementById('result');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const query = input.value.trim();
+        if (!query) return;
+        resultEl.classList.remove('hidden');
+        resultEl.innerHTML = '<div class="loading">Checking...</div>';
+        try {
+          const resp = await fetch('/api/check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query })
+          });
+          const data = await resp.json();
+          if (!resp.ok) throw new Error(data.detail || 'Request failed');
+
+          const providersHtml = Object.values(data.providers || {}).map((p) => `
+            <div class="provider-row">
+              <div class="provider-name">${p.provider}</div>
+              <div class="provider-score ${p.is_malicious ? 'bad' : 'good'}">${p.is_malicious ? 'Malicious' : 'Clean'} · Score ${p.score}</div>
+            </div>
+          `).join('');
+
+          resultEl.innerHTML = `
+            <div class="verdict ${data.verdict === 'Malicious' ? 'bad' : (data.verdict === 'Clean' ? 'good' : '')}">
+              Verdict: ${data.verdict} (score ${data.score})
+            </div>
+            <div class="providers">${providersHtml || 'No provider data'}</div>
+            ${data.reasons?.length ? `<div class="reasons">Reasons: ${data.reasons.join(', ')}</div>` : ''}
+          `;
+        } catch (err) {
+          resultEl.innerHTML = `<div class="error">${err.message}</div>`;
+        }
+      });
+    </script>
+  </body>
+</html>
